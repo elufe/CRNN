@@ -10,6 +10,7 @@ import cv2
 import keras
 import tensorflow.keras
 from tensorflow.keras.utils import Sequence
+import math
 
 
 class DataGenerator(tensorflow.keras.utils.Sequence):
@@ -18,9 +19,14 @@ class DataGenerator(tensorflow.keras.utils.Sequence):
         self.batch_size = batch_size
 
     def __len__(self):
-        return np.ceil(len(self.img_list) / float(self.batch_size))
+        #return np.ceil(len(self.img_list) / float(self.batch_size))
+        return math.ceil(len(self.img_list) / float(self.batch_size))
 
     def __getitem__(self, idx):
+        
+        img_list = self.img_list
+        label = self.label
+        batch_size = self.batch_size
         
         imgs = list()
         labels = list()
@@ -28,6 +34,9 @@ class DataGenerator(tensorflow.keras.utils.Sequence):
         label_len = list()
         
         for i in range(idx * self.batch_size,(idx + 1) * self.batch_size):
+            if i >= len(img_list):
+                break
+                
             temp = cv2.imread(img_list[i], cv2.IMREAD_GRAYSCALE)
             temp = temp.reshape(temp.shape + (1,))
             temp = temp / 255.0
