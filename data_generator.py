@@ -1,68 +1,53 @@
 
 # coding: utf-8
 
-# In[2]:
+# In[31]:
 
 
 import numpy as np
 import os
 import cv2
 import keras
+import tensorflow.keras
+from tensorflow.keras.utils import Sequence
 
 
-# In[3]:
+class DataGenerator(tensorflow.keras.utils.Sequence):
+    def __init__(self, img_list, label, batch_size):
+        self.img_list, self.label = img_list, label
+        self.batch_size = batch_size
 
+    def __len__(self):
+        return np.ceil(len(self.img_list) / float(self.batch_size))
 
-class DataGenerator(keras.utils.Sequence):
-
-    def __init__(self, img_list, label_text, batch_size):
+    def __getitem__(self, idx):
         
-        self.__dict__.update(locals())
-    
-    def __getitem__(self, index):
-        # Generate indexes of the batch
-        indexes = self.indexes[index*self.batch_size:(index+1)*self.batch_size]
-
-        # Find list of IDs
-        image = [self.img_list[k] for k in indexes]
-        label = [self.label_text[k] for k in indexes]
-
-        # Generate data
-        X, y = self.__data_generation(img, label)
-
-        return X, y
-
-    def on_epoch_end(self):
-        self.indexes = np.arange(len(self.list_IDs))
-        if self.shuffle == True:
-            np.random.shuffle(self.indexes)
-
-    def __data_generation(self, image, label):
-        # Initialization
-        X = []
-        y = []
+        imgs = list()
+        labels = list()
+        input_len = list()
+        label_len = list()
         
-        for i in range(len(image)):
-            X.append(cv2.imread(image[i], cv2.IMREAD_GRAYSCALE))
-            Y.append(label[i])
-#         X = np.empty((self.batch_size, (32,128,1), 1))
-#         y = np.empty((self.batch_size), dtype=int)
+        for i in range(idx * self.batch_size,(idx + 1) * self.batch_size):
+            temp = cv2.imread(img_list[i], cv2.IMREAD_GRAYSCALE)
+            temp = temp.reshape(temp.shape + (1,))
+            temp = temp / 255.0
+            imgs.append(temp)
+            labels.append(label[i])
+            input_len.append(31)
+            label_len.append(len(label[i]))
 
-#         # Generate data
-#         for i, ID in enumerate(list_IDs_temp):
-#             # Store sample
-#             X[i,] = np.load('data/' + ID + '.npy')
 
-#             # Store class
-#             y[i] = self.labels[ID]
-
-#         for i, ID in enumerate(list_IDs_temp):
-#             # Store sample
-#             X[i,] = np.load('data/' + ID + '.npy')
-
-#             # Store class
-#             y[i] = self.labels[ID]
-
+        data={
+            'image_input': np.array(imgs),
+            'label_input': np.array(labels),
+            'input_length': np.array(input_len), # used by ctc
+            'label_length': np.array(label_len), # used by ctc
             
-        return X, Y
+#            'source_str': source_str, # used for visualization only
+        }
+        
+        outputs_dict = {'ctc': np.zeros([batch_size])}  # dummy
+        
+        return data, outputs_dict
+        #yield data, outputs_dict
 
